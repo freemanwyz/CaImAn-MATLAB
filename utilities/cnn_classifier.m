@@ -1,4 +1,4 @@
-function [ind,value] = cnn_classifier(A,dims,classifier,thr)
+function [ind,value] = cnn_classifier(A,dims,classifier,thr,fdSave)
 
 %cnn_classifer classify spatial components using a pretrained CNN
 %classifier using the keras importer add on.
@@ -39,7 +39,7 @@ else
 
     if ~exist(classifier,'file')
         url = 'https://www.dropbox.com/s/1csymylbne7yyt0/cnn_model.h5?dl=1';
-        classifier = 'cnn_model.h5';
+        classifier = [fdSave,filesep,'cnn_model.h5'];
         outfilename = websave(classifier,url);
     end
 

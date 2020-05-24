@@ -110,8 +110,16 @@ if memmaped
         RESULTS(i).Y = [];
         RESULTS(i).Yr = [];
     end
-
 else  % avoid copying the entire dataset to each worker, for in-memory data
+%     for i = 1:n_patches
+%         patch_idx = patch_to_indices(patches{i});
+%         Yp = Y(patch_idx{:},:);
+%         value = process_patch_object(Yp, F_dark, K, p, tau, options);
+%         RESULTS(i) = value;
+%         RESULTS(i).Y = [];
+%         RESULTS(i).Yr = [];       
+%         fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
+%     end    
     for i = n_patches:-1:1
         patch_idx = patch_to_indices(patches{i});
         Yp = Y(patch_idx{:},:);
@@ -186,7 +194,8 @@ if options.cluster_pixels
     for i = 1:n_patches
         patch_idx = patch_to_indices(patches{i});
         patch_size = patches{i}(2:2:end) - patches{i}(1:2:end) + 1;
-        P.active_pixels(patch_idx{:}) = P.active_pixels(patch_idx{:}) + reshape(RESULTS(i).P.active_pixels,patch_size);
+        P.active_pixels(patch_idx{:}) = P.active_pixels(patch_idx{:}) + ...
+            reshape(RESULTS(i).P.active_pixels,patch_size);
         P.psdx(patch_idx{:},:) = reshape(RESULTS(i).P.psdx,[patch_size, psdx_size(end)]);
     end
 
@@ -346,9 +355,7 @@ function result = process_patch(Y, F_dark, K, p, tau, options)
         fitness = compute_event_exceptionality(C+YrA,options.N_samples_exc,options.robust_std);
         ind_exc = (fitness < options.min_fitness);
         ind = (ind_corr | ind_cnn) & ind_exc;
-        %fitness_delta = compute_event_exceptionality(diff(C+YrA,[],2),0);
-        %ind = (ind_space & ind_time) | (fitness < options.patch_max_fit) | (fitness_delta < options.patch_max_fit_delta);
-        
+
         P.rval_space = rval_space;
         P.rval_time = rval_time;
         P.ind_space = ind_space;
@@ -380,5 +387,11 @@ function CNM = process_patch_object(Y,F_dark,K,p,tau,options)
                 'space_thresh',options.patch_space_thresh);
     Y = single(Y) - single(F_dark);
     Y(isnan(Y)) = single(F_dark);
+    try
     CNM.fit(Y,options,K);                
+    catch
+        fprintf('Fitting error\n')
+    end
 end
+
+
